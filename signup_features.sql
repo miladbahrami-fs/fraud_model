@@ -31,7 +31,7 @@ WINDOW w AS (PARTITION BY binary_user_id ORDER BY date_joined ROWS BETWEEN UNBOU
 , mt5_account AS (
 SELECT DISTINCT (mt5_user.binary_user_id)
      , FIRST_VALUE(mt5_user.registration_ts) OVER w AS first_real_mt5_registration_ts
-     , COUNT(*) OVER w as count_real_mt5_login
+     , COUNT(login) OVER w as count_real_mt5_login
   FROM bi.mt5_user
  WHERE binary_user_id IS NOT NULL
 WINDOW w AS (PARTITION BY binary_user_id ORDER BY registration_ts ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)  
@@ -70,8 +70,8 @@ SELECT profile.binary_user_id
      , bo_account.count_crypto_bo_accounts
      , bo_account.count_fiat_bo_accounts
      , bo_account.same_joined_birth
-     , mt5_account.first_real_mt5_registration_ts
+     , DATE(mt5_account.first_real_mt5_registration_ts) AS real_mt5_date_joined
      , COALESCE(mt5_account.count_real_mt5_login,0) AS count_real_mt5_login
   FROM profile
   LEFT JOIN bo_account ON bo_account.binary_user_id = profile.binary_user_id
-  LEFT JOIN mt5_accounts ON mt5_accounts.binary_user_id = profile.binary_user_id
+  LEFT JOIN mt5_account ON mt5_account.binary_user_id = profile.binary_user_id
