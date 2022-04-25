@@ -140,4 +140,4 @@ UNION ALL
    FROM fraud_detection.india_paymero_external
 )
 SELECT DISTINCT loginid 
-  FROM (SELECT REGEXP_EXTRACT_ALL(loginid,r'\w+') AS loginid_list FROM logins), UNNEST(loginid_list) AS loginid
+  FROM (SELECT REGEXP_EXTRACT_ALL(loginid,r'[^,\s]+') AS loginid_list FROM logins), UNNEST(loginid_list) AS loginid
