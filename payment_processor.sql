@@ -3,8 +3,8 @@ WITH trades AS (
          , binary_user_id
          , platform
          , 'trade' AS action
-         , SUM(number_of_trades) AS action_count
-         , SUM(CAST(closed_pnl_usd AS INT64)) AS value
+         , SUM(COALESCE(number_of_trades,0)) AS action_count
+         , SUM(CAST(COALESCE(closed_pnl_usd,0) AS INT64)) AS value
          , MAX(COALESCE(risk.risk_factor,0)) AS action_suspiciency
       FROM bi.trades
       LEFT JOIN (
@@ -35,7 +35,7 @@ WITH trades AS (
              WINDOW w AS (PARTITION BY asset ORDER BY date ROWS BETWEEN 30 PRECEDING and CURRENT ROW )
           ) AS risk
         ON trades.asset = risk.asset AND trades.date = risk.date
-     WHERE trades.date = '2022-01-01'
+     WHERE trades.date >= '2022-01-01'
      GROUP BY date, binary_user_id, platform, action)
 , pp_success AS (
     SELECT date
@@ -67,6 +67,8 @@ WITH trades AS (
                          , SUM(IF(TraceID IS NULL,0,1)) AS all_count
                       FROM bi.dimension_calendar dc
                       LEFT JOIN bi.premier_cashier_transactions transactions on transactions.transaction_date = dc.date_actual
+                      WHERE dc.date_actual >= '2022-01-01' AND dc.date_actual <= current_date
+                        AND transactions.transaction_date >= '2022-01-01'
                      GROUP BY 1,2,3
                     )
            WINDOW w AS (PARTITION BY payment_processor ORDER BY date ROWS BETWEEN 30 PRECEDING and CURRENT ROW) 
@@ -80,9 +82,9 @@ WITH trades AS (
          , binary_user_id
          , platform
          , action
-         , SUM(action_count) AS action_count
-         , SUM(value) AS value
-         , MIN(COALESCE(risk_rank,1)) AS action_suspiciency
+         , SUM(COALESCE(action_count,0)) AS action_count
+         , SUM(COALESCE(value,0)) AS value
+         , MAX(COALESCE(risk_rank,1)) AS action_suspiciency
       FROM (
             SELECT DATE(transaction_time) AS date
                  , binary_user_id
@@ -95,6 +97,7 @@ WITH trades AS (
                     WHEN category IN ('Client Withdrawal','Payment Agent Withdrawal') THEN 'withdrawal' END AS action
                  , 1 AS action_count
                  , amount_usd AS value
+                 , payment.currency_code
                  , pp_success.risk_rank
               FROM bi.bo_payment_model payment
               LEFT JOIN pp_success ON pp_success.payment_processor = payment.payment_processor and DATE(payment.transaction_time) = pp_success.date 
