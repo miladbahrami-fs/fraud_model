@@ -1,13 +1,41 @@
 WITH trades AS (
-    SELECT date
+    SELECT trades.date
          , binary_user_id
          , platform
          , 'trade' AS action
          , SUM(number_of_trades) AS action_count
          , SUM(CAST(closed_pnl_usd AS INT64)) AS value
-         -- action suspiciency
+         , MAX(COALESCE(risk.risk_factor,0)) AS action_suspiciency
       FROM bi.trades
-     WHERE date = '2022-01-01'
+      LEFT JOIN (
+            SELECT date
+                 , asset
+                 , SUM(clinet_win_count) OVER w
+                 , SUM(total_contracts) OVER w
+                 , ROUND(SAFE_DIVIDE(SUM(clinet_win_count) OVER w, SUM(total_contracts) OVER w),2) AS risk_factor
+              FROM (
+                    SELECT date_actual AS date
+                         , asset
+                         , SUM(COALESCE(client_win_count,0)) AS clinet_win_count
+                         , SUM(COALESCE(total_contracts,0)) AS total_contracts
+                      FROM bi.dimension_calendar dc
+                      LEFT JOIN (
+                            SELECT pnl.sell_txn_date
+                                 , pnl.underlying_symbol
+                                 , client_win_count
+                                 , total_contracts
+                                 , us.display_name AS asset
+                              FROM bi.mv_bo_pnl_summary pnl
+                              JOIN dictionary.underlying_symbol us ON pnl.underlying_symbol = us.symbol
+                             WHERE year_month >= '2022-01-01'
+                              ) AS asset_pnl ON dc.date_actual = asset_pnl.sell_txn_date
+                     GROUP BY 1, 2
+                     ORDER BY 2 DESC
+                   )
+             WINDOW w AS (PARTITION BY asset ORDER BY date ROWS BETWEEN 30 PRECEDING and CURRENT ROW )
+          ) AS risk
+        ON trades.asset = risk.asset AND trades.date = risk.date
+     WHERE trades.date = '2022-01-01'
      GROUP BY date, binary_user_id, platform, action)
 , pp_success AS (
     SELECT date
@@ -20,7 +48,7 @@ WITH trades AS (
                  , payment_processor
                  , SUM(approved_count) OVER w AS approved 
                  , SUM(all_count) OVER w AS all_transactions
-                 , SAFE_DIVIDE(SUM(approved_count) OVER w, SUM(all_count) OVER w) AS success_rate
+                 , ROUND(SAFE_DIVIDE(SUM(approved_count) OVER w, SUM(all_count) OVER w),2) AS success_rate
               FROM (
                     SELECT date_actual AS date
                          , CASE
@@ -54,7 +82,7 @@ WITH trades AS (
          , action
          , SUM(action_count) AS action_count
          , SUM(value) AS value
-          -- action suspiciency
+         , MIN(COALESCE(risk_rank,1)) AS action_suspiciency
       FROM (
             SELECT DATE(transaction_time) AS date
                  , binary_user_id
@@ -67,21 +95,16 @@ WITH trades AS (
                     WHEN category IN ('Client Withdrawal','Payment Agent Withdrawal') THEN 'withdrawal' END AS action
                  , 1 AS action_count
                  , amount_usd AS value
+                 , pp_success.risk_rank
               FROM bi.bo_payment_model payment
-              LEFT JOIN bi.dict_source ds on ds.id = payment.source
+              LEFT JOIN pp_success ON pp_success.payment_processor = payment.payment_processor and DATE(payment.transaction_time) = pp_success.date 
+              LEFT JOIN bi.dict_source ds ON ds.id = payment.source
              WHERE category IN ('Client Withdrawal', 'Payment Agent Withdrawal'
                               , 'Client Deposit', 'Payment Agent Deposit')
                AND DATE(transaction_time) >= '2022-01-01'
         ) AS daily
      GROUP BY date, binary_user_id, platform, action
 )
--- , pp AS (
---   SELECT * 
---     FROM payments
---     LEFT JOIN doughflow.payment_processor_risk_category_external rk 
---       ON payments.payment_processor = rk.payment_processor
---    AND DATE(bo.transaction_date) between rk.date_risk_start and rk.date_risk_end
--- )
 SELECT * FROM trades
 UNION ALL
 SELECT * FROM payments
