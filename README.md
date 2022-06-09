@@ -40,6 +40,8 @@
 - withdrawal_risk
 - deposit_major_currency
 - withdrawal_major_currency
+- deposit_major_pp
+- withdrawal_major_pp
 - trade_count
 - trade_pnl
 - trade_risk
