@@ -42,7 +42,8 @@
 - withdrawal_major_currency
 - deposit_major_pp
 - withdrawal_major_pp
-- card_issuer_risk
+- deposit_card_issuer_risk
+- withdrawal_card_issuer_risk
 - trade_count
 - trade_pnl
 - trade_risk

@@ -100,7 +100,7 @@ WITH trades AS (
          , MAX(COALESCE(risk_rank, 1)) AS action_suspiciency
          , APPROX_TOP_COUNT(currency_code, 1)[offset(0)].value AS major_currency
          , APPROX_TOP_COUNT(payment_processor, 1)[offset(0)].value AS major_payment_processor
-         , MAX(COALESCE(card_issuer_risk,0)) AS card_issuer_popularity
+         , MAX(COALESCE(card_issuer_risk,0)) AS card_issuer_risk
       FROM (
             SELECT DATE(transaction_time) AS date
                  , binary_user_id
@@ -145,11 +145,13 @@ SELECT COALESCE(trades.date, payments_deposit.date, payments_withdrawal.date) AS
      , payments_deposit.action_suspiciency AS deposit_risk
      , payments_deposit.major_currency AS deposit_major_currency
      , payments_deposit.major_payment_processor AS deposit_major_pp
+     , payments_deposit.card_issuer_risk AS deposit_card_issuer_risk
      , payments_withdrawal.action_count AS withdrawal_count
-     , -payments_withdrawal.value AS withdrawal_value
+     , -payments_withdrawal.value AS withdrawal_value 
      , payments_withdrawal.action_suspiciency AS withdrawal_risk 
      , payments_withdrawal.major_currency AS withdrawal_major_currency
      , payments_withdrawal.major_payment_processor AS withdrawal_major_pp
+     , payments_withdrawal.card_issuer_risk AS withdrawal_card_issuer_risk
      , trades.action_count AS trade_count
      , trades.value AS trade_pnl
      , trades.action_suspiciency AS trade_risk
