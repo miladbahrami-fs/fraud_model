@@ -70,11 +70,26 @@ WITH trades AS (
                        AND transactions.transaction_date >= '2022-01-01'
                      GROUP BY 1,2,3
                     )
-           WINDOW w AS (PARTITION BY payment_processor ORDER BY date ROWS BETWEEN 30 PRECEDING and CURRENT ROW) 
+           WINDOW w AS (PARTITION BY payment_processor ORDER BY date ROWS BETWEEN 30 PRECEDING AND CURRENT ROW) 
            ) AS daily
       LEFT JOIN doughflow.payment_processor_risk_category_external rk 
         ON daily.payment_processor = rk.payment_processor
        AND date between rk.date_risk_start and rk.date_risk_end
+)
+, card_issuer_pp AS (
+    SELECT residence
+         , card_issuer
+         , cnt
+         , 1 - ROUND(SUM(COALESCE(cnt)) OVER(PARTITION BY residence,card_issuer)/SUM(COALESCE(cnt)) OVER(PARTITION BY residence), 2) AS card_issuer_risk
+      FROM (
+            SELECT residence
+                 , card_issuer
+                 , COUNT(card_issuer) cnt
+              FROM bi.premier_cashier_transactions pct
+              JOIN bi.bo_client ON bo_client.loginid = pct.PIN
+             WHERE card_issuer IS NOT NULL AND residence IS NOT NULL
+             GROUP BY residence, card_issuer
+      )
 )
 , payments AS (
     SELECT date
@@ -85,6 +100,7 @@ WITH trades AS (
          , MAX(COALESCE(risk_rank, 1)) AS action_suspiciency
          , APPROX_TOP_COUNT(currency_code, 1)[offset(0)].value AS major_currency
          , APPROX_TOP_COUNT(payment_processor, 1)[offset(0)].value AS major_payment_processor
+         , MAX(COALESCE(card_issuer_risk,0)) AS card_issuer_popularity
       FROM (
             SELECT DATE(transaction_time) AS date
                  , binary_user_id
@@ -100,7 +116,19 @@ WITH trades AS (
                  , payment.currency_code
                  , payment.payment_processor
                  , pp_success.risk_rank
-              FROM bi.bo_payment_model payment
+                 , card_issuer_pp.card_issuer_risk
+              FROM (
+                    SELECT transaction_time
+                         , payment.binary_user_id
+                         , category,amount_usd
+                         , currency_code
+                         , source
+                         , payment_processor
+                         , user_profile.residence
+                      FROM bi.bo_payment_model payment 
+                      JOIN bi.user_profile ON user_profile.binary_user_id = payment.binary_user_id
+                    ) AS payment
+              JOIN card_issuer_pp ON card_issuer_pp.residence = payment.residence 
               LEFT JOIN pp_success ON pp_success.payment_processor = payment.payment_processor 
                    AND DATE(payment.transaction_time) = pp_success.date 
               LEFT JOIN bi.dict_source ds ON ds.id = payment.source
