@@ -21,7 +21,8 @@
 - same_joined_birth
 
 ### Trade & Payment Features
-#### First Model
+[Narrow & Wide data model](https://en.wikipedia.org/wiki/Wide_and_narrow_data)
+#### First Model - Narrow Model
 - date
 - binary_user_id
 - platform
@@ -29,7 +30,7 @@
 - action_count
 - value
 - action_suspiciency
-#### Second Model
+#### Second Model - Wide Model
 - date
 - binary_user_id
 - deposit_count
