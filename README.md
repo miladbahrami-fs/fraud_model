@@ -12,6 +12,7 @@
 - is_pa
 - is_affiliate
 - has_trade
+- has_vr_trade
 - has_deposit
 - has_withdrawal
 - count_real_bo_accounts
@@ -49,3 +50,26 @@
 - trade_pnl
 - trade_risk
 - trade_major_asset_type
+
+#### Third Model - Aggregated
+- binary_user_id
+- bo_trade_count
+- bo_trade_pnl
+- bo_trade_win_count
+- bo_trade_risk
+- bo_trade_major_asset
+- mt5_trade_count
+- mt5_trade_pnl
+- mt5_trade_win_count
+- mt5_trade_risk
+- mt5_trade_major_asset
+- deposit_count
+- deposit_usd
+- major_deposit_currency
+- major_deposit_pp
+- deposit_risk
+- withdrawal_count
+- withdrawal_usd
+- major_withdrawal_currency
+- major_withdrawal_pp
+- withdrawal_risk
