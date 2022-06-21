@@ -21,3 +21,7 @@ https://cloud.google.com/bigquery-ml/docs/logistic-regression-prediction
 https://cloud.google.com/vertex-ai/docs/datasets/data-types-tabular#transformations
 https://cloud.google.com/vertex-ai/docs/tabular-data/classification-regression/overview
 https://codelabs.developers.google.com/vertex-automl-tabular#0
+
+## TO DO
+- Aggregate on account
+- sepaarate model for MT5 and Binary Options
