@@ -31,7 +31,7 @@ WITH trades AS (
                      GROUP BY 1, 2
                      ORDER BY 2 DESC
                    )
-             WINDOW w AS (PARTITION BY asset ORDER BY date ROWS BETWEEN 30 PRECEDING and CURRENT ROW )
+             WINDOW w AS (PARTITION BY asset ORDER BY date ROWS BETWEEN 30 PRECEDING AND CURRENT ROW )
           ) AS risk
         ON trades.asset = risk.asset AND trades.date = risk.date
      WHERE trades.date >= '2022-01-01'
