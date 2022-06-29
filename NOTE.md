@@ -1,0 +1,13 @@
+- MT5 Transfer
+- Number of money transfers
+## Anomaly in company numbers
+- Active clients
+- Trading volumes -> BO (FX / Vol Indices), MT5 (FX:abook/bbook, Vol Indices) 
+- Trading volumes for brokers
+- New deposits
+- Webmoney deposit
+- High win rate (non fin) / High win rate (fin)
+- Was there anything special about trading results for a particular instrument (can be too many people trading, can be too little, the loss is too large) - especially if this instrument is exotic and not too popular among the clients.
+- Was there anything special about top winners / losers in BO / MT5 (vol indices / abook)? How did winners make their money? Was it a one-day event or do they manage to do it regularly? 
+- Was there anything special about a separately monitored group of instruments (recently launched symbols, new products / Ultrashort FX / Tick FX etc / Straddle news trading strategy in multipliers)?
+- Was there anything special about people who deposited / withdrew the most yesterday? A group depositing together? Somebody deposited too much (if usually you don’t see more than 20k from the top depositor, then 100k from a top depositor should raise a flag) - then he can either do ML (so, compliance must be alerted) or start trading with large volumes (then we should be ready that he might win/lose a lot and thus influence our daily PL).
