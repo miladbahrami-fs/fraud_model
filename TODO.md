@@ -34,3 +34,5 @@ https://lakshmanok.medium.com/anomaly-detection-in-time-series-data-using-bigque
 - Aggregate on account
 - sepaarate model for MT5 and Binary Options
 - Money flow
+- Similar Trades
+- Average of different metrics over a time window
